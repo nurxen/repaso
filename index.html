@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Repaso · que no se te olvide nada</title>
+<meta name="description" content="Listas para repasar antes de un viaje, de salir de casa o de ir a entrenar.">
+<meta name="theme-color" content="#127c6e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Repaso">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{
+  --bg:#f6f4ef;--card:#fff;--ink:#1d2a2a;--muted:#6b7676;--line:#e7e3da;
+  --accent:#127c6e;--accent-ink:#fff;--soft:#dcefeb;--danger:#c2410c;--done:#a3acaa;
+  --r:16px;--shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#111615;--card:#1a2120;--ink:#e9efed;--muted:#95a3a0;--line:#2a3331;
+  --accent:#3fbfa9;--accent-ink:#0b1a17;--soft:#1f3a35;--danger:#fb923c;--done:#5f6b69;
+  --shadow:none;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+#app{max-width:640px;margin:0 auto;min-height:100vh;padding-bottom:calc(110px + env(safe-area-inset-bottom))}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:8px}
+.top h1{font-size:22px;margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .sub{font-size:13px;color:var(--muted);margin:0}
+.ib{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:20px;flex:none}
+.ib:active{background:var(--line)}
+.ib.on{background:var(--soft);color:var(--accent)}
+.wrap{padding:0 16px}
+.hero{padding:6px 16px 4px}
+.hero h1{font-size:30px;margin:0 0 2px;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--muted)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--line)}
+.lc{display:flex;align-items:center;gap:12px;padding:14px;margin:10px 0;width:100%;text-align:left}
+.lc .em{font-size:28px;width:44px;height:44px;border-radius:12px;background:var(--soft);display:grid;place-items:center;flex:none}
+.lc .tx{flex:1;min-width:0}
+.lc b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lc small{color:var(--muted)}
+.bar{height:6px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:9px;transition:width .25s}
+.h2{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:22px 4px 6px;font-weight:600}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));background:var(--accent);color:var(--accent-ink);padding:15px 26px;border-radius:99px;font-weight:700;box-shadow:0 6px 20px rgba(18,124,110,.35);z-index:6;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{padding:14px;text-align:left;display:flex;flex-direction:column;gap:4px;min-height:104px;position:relative}
+.tile .em{font-size:28px}
+.tile b{font-size:15px}
+.tile small{color:var(--muted);font-size:12.5px;line-height:1.3}
+.tile .x{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:9px;color:var(--muted)}
+.empty{text-align:center;padding:26px 16px 6px;color:var(--muted)}
+.empty .big{font-size:52px}
+/* wizard */
+.q{padding:14px;margin:10px 0}
+.q label,.q .ql{display:block;font-weight:600;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:9px 14px;border-radius:99px;border:1.5px solid var(--line);background:var(--bg);font-size:15px}
+.chip.on{border-color:var(--accent);background:var(--soft);color:var(--accent);font-weight:600}
+.step{display:flex;align-items:center;gap:16px}
+.step button{width:46px;height:46px;border-radius:14px;border:1.5px solid var(--line);font-size:22px;background:var(--bg)}
+.step output{font-size:26px;font-weight:700;min-width:40px;text-align:center}
+.inp{width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);outline:none}
+.inp:focus{border-color:var(--accent)}
+.btn{display:block;width:100%;padding:15px;border-radius:14px;background:var(--accent);color:var(--accent-ink);font-weight:700;text-align:center;margin:16px 0}
+.btn.sec{background:var(--soft);color:var(--accent)}
+/* list */
+.prog{padding:0 16px 6px}
+.prog .row{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+.sec{margin:12px 16px;overflow:hidden}
+.sh{display:flex;align-items:center;gap:8px;padding:12px 14px 6px}
+.sh h3{margin:0;font-size:16px;flex:1}
+.sh .ct{font-size:13px;color:var(--muted)}
+.it{display:flex;align-items:center;gap:4px;padding:2px 6px 2px 14px;border-top:1px solid var(--line)}
+.it:first-of-type{border-top:0}
+.chk{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:11px 0;text-align:left}
+.box{width:24px;height:24px;border-radius:8px;border:2px solid var(--muted);flex:none;display:grid;place-items:center;transition:.15s}
+.it.d .box{background:var(--accent);border-color:var(--accent)}
+.it.d .box::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:translateY(-1px) rotate(45deg)}
+.it.d .t{color:var(--done);text-decoration:line-through}
+.t{word-break:break-word}
+.del{width:36px;height:36px;border-radius:10px;color:var(--muted);font-size:18px;flex:none;opacity:.6}
+.del:active{background:var(--line);opacity:1}
+.it .inp{padding:8px 10px;margin:6px 0}
+.add{display:flex;gap:8px;padding:8px 10px 10px 14px;border-top:1px solid var(--line)}
+.add input{flex:1;border:0;background:transparent;outline:none;padding:8px 0}
+.add input::placeholder{color:var(--muted)}
+.add button{width:36px;height:36px;border-radius:10px;background:var(--soft);color:var(--accent);font-size:22px;font-weight:700}
+.party{margin:12px 16px;padding:16px;text-align:center;background:var(--soft);color:var(--accent);border-radius:var(--r);font-weight:700}
+.hint{font-size:13px;color:var(--muted);padding:4px 20px}
+/* sheet */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:20;display:flex;align-items:flex-end;justify-content:center;animation:fd .15s}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:22px 22px 0 0;padding:8px 16px calc(20px + env(safe-area-inset-bottom));animation:up .2s ease-out}
+.sheet .grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 10px}
+.sheet h2{margin:4px 0 12px;font-size:20px}
+.mi{display:flex;gap:12px;align-items:center;width:100%;padding:14px;text-align:left;border-radius:12px;font-size:16px}
+.mi:active{background:var(--line)}
+.mi.red{color:var(--danger)}
+.sheet p{color:var(--muted);margin:6px 0}
+.sheet ol{padding-left:20px;margin:6px 0 14px}
+.sheet li{margin:4px 0}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes fd{from{opacity:0}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;display:flex;gap:16px;align-items:center;z-index:30;width:max-content;max-width:92%;font-size:15px;animation:fd .2s}
+.toast button{color:var(--accent);font-weight:700;filter:brightness(1.4)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+"use strict";
+/* ============ Utilidades ============ */
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY = "repaso.v1";
+function load(){ try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.lists) return {templates:[], ...d}; }catch(e){} return {lists:[], templates:[]}; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){ toast("No se ha podido guardar"); } }
+let S = load();
+
+/* Constructor de listas: evita duplicados */
+function B(){
+  const secs = []; let cur = null; const seen = new Set();
+  return {
+    sec(t){ cur = secs.find(s => s.title === t); if(!cur){ cur = {title:t, items:[]}; secs.push(cur); } return this; },
+    add(text, cond = true){ if(cond && text && !seen.has(text)){ seen.add(text); cur.items.push(text); } return this; },
+    done(){ return secs.filter(s => s.items.length); }
+  };
+}
+const x = (t, n) => n > 1 ? `${t} ×${n}` : t;
+const has = (arr, v) => (arr || []).includes(v);
+
+/* ============ Reglas: maleta ============ */
+function packing(b, a, opt = {}){
+  const n = Math.max(1, a.dias | 0);
+  const lav = a.lavadora && n > 5;
+  const c = lav ? Math.min(n, 5) : n;
+  const est = a.estacion, act = a.actividades || [];
+  const calor = est === "verano", frio = est === "invierno", templ = est === "entretiempo";
+  const agua = has(act,"playa") || has(act,"piscina");
+  const sol = calor || agua || has(act,"nieve") || has(act,"montana");
+
+  b.sec("👕 Ropa")
+    .add(x("Ropa interior", c + 1))
+    .add(x("Calcetines", c + 1))
+    .add(x("Camisetas", c))
+    .add(x("Pantalones largos", Math.max(1, Math.ceil(c / (calor ? 4 : 3)))))
+    .add(x("Pantalones cortos", Math.max(1, Math.ceil(c / 3))), calor)
+    .add(x("Pijama", n > 4 ? 2 : 1))
+    .add("Calzado cómodo para caminar")
+    .add(x("Sudadera o jersey", n > 4 ? 2 : 1), !calor)
+    .add("Chaqueta ligera", templ || calor)
+    .add("Abrigo", frio)
+    .add("Gorro, guantes y bufanda", frio)
+    .add("Camiseta térmica", frio)
+    .add("Chubasquero o paraguas plegable", a.lluvia || templ)
+    .add("Bolsa para la ropa sucia", n > 1)
+    .add("Detergente de viaje", lav);
+
+  if(agua) b.sec("🏖️ Playa y piscina")
+    .add(x("Bañador", n > 2 ? 2 : 1)).add("Toalla de playa").add("Chanclas")
+    .add("Gorra o sombrero").add("After sun").add("Funda estanca para el móvil", has(act,"playa"));
+  if(has(act,"montana")) b.sec("🥾 Montaña")
+    .add("Botas o zapatillas de montaña").add("Mochila pequeña de día").add("Cantimplora")
+    .add("Cortavientos").add("Frontal o linterna").add("Ruta o mapa descargado");
+  if(has(act,"nieve")) b.sec("⛷️ Nieve")
+    .add("Chaqueta y pantalón de esquí").add("Guantes impermeables").add("Gafas de ventisca")
+    .add("Casco").add("Forfait").add("Calcetines térmicos").add("Cacao labial");
+  if(has(act,"deporte")) b.sec("🏃 Deporte")
+    .add("Ropa deportiva").add("Zapatillas de deporte").add("Botella reutilizable");
+  if(has(act,"elegante")) b.sec("🍷 Para arreglarse")
+    .add("Conjunto arreglado").add("Zapatos de vestir").add("Complementos");
+  if(has(act,"trabajo")) b.sec("💼 Trabajo")
+    .add("Portátil y cargador").add("Ropa formal").add("Documentación de las reuniones").add("Adaptador USB-C / HDMI");
+
+  const liq = opt.mano;
+  b.sec("🧴 Neceser")
+    .add(liq ? "Líquidos en envases de 100 ml como máximo, en bolsa transparente" : null, liq)
+    .add("Cepillo de dientes").add("Pasta de dientes").add("Desodorante")
+    .add(liq ? "Champú y gel en envases de viaje" : "Champú y gel")
+    .add("Peine o cepillo").add("Maquinilla de afeitar").add("Crema hidratante")
+    .add("Protector solar", sol).add("Repelente de mosquitos", calor)
+    .add("Gafas o lentillas (y líquido)").add("Productos de higiene íntima")
+    .add("Medicación habitual").add("Mini botiquín: analgésico, tiritas, antidiarreico", n > 2);
+
+  if(opt.tech !== false) b.sec("🔌 Tecnología")
+    .add("Cargador del móvil").add("Batería externa").add("Auriculares");
+
+  b.sec("🎒 Otros")
+    .add("Gafas de sol", calor || sol).add("Bolsa plegable").add("Libro o e-reader", n > 1)
+    .add("Botella reutilizable");
+}
+
+/* ============ Plantillas ============ */
+const T = {
+  viaje: {
+    icon:"✈️", name:"Viaje", desc:"Documentación, roaming, transporte, maleta…",
+    qs:[
+      {id:"lugar", type:"text", label:"¿A dónde vas?", ph:"Ej.: Londres (opcional)"},
+      {id:"destino", type:"choice", label:"Destino", def:"ue", opts:[["nacional","🇪🇸 España"],["ue","🇪🇺 Unión Europea"],["fuera","🌍 Fuera de la UE"]]},
+      {id:"divisa", type:"toggle", label:"¿Usan otra moneda (no euro)?", def:false, show:a => a.destino !== "nacional"},
+      {id:"transporte", type:"choice", label:"¿Cómo vas?", def:"avion", opts:[["avion","✈️ Avión"],["tren","🚆 Tren"],["coche","🚗 Coche"],["bus","🚌 Autobús"],["barco","⛴️ Barco"]]},
+      {id:"equipaje", type:"choice", label:"Equipaje", def:"mano", opts:[["mano","Solo de mano"],["facturado","Facturado"]], show:a => a.transporte === "avion"},
+      {id:"dias", type:"number", label:"¿Cuántos días?", def:3, min:1, max:60},
+      {id:"estacion", type:"choice", label:"¿Qué tiempo esperas?", def:"entretiempo", opts:[["verano","☀️ Calor"],["entretiempo","🌤️ Templado"],["invierno","❄️ Frío"]]},
+      {id:"lluvia", type:"toggle", label:"¿Puede llover?", def:false},
+      {id:"actividades", type:"multi", label:"¿Qué vas a hacer?", def:["ciudad"], opts:[["ciudad","🏙️ Ciudad"],["playa","🏖️ Playa"],["piscina","🏊 Piscina"],["montana","🥾 Montaña"],["nieve","⛷️ Nieve"],["deporte","🏃 Deporte"],["elegante","🍷 Cena o evento"],["trabajo","💼 Trabajo"]]},
+      {id:"con", type:"multi", label:"¿Viajas con…?", def:[], opts:[["ninos","👶 Niños"],["mascota","🐶 Mascota"]]},
+      {id:"alquiler", type:"toggle", label:"¿Vas a alquilar coche?", def:false, show:a => a.transporte !== "coche"},
+      {id:"lavadora", type:"toggle", label:"¿Podrás lavar ropa allí?", def:false, show:a => a.dias > 5},
+      {id:"casa", type:"toggle", label:"¿Añadir el repaso de casa antes de salir?", def:true}
+    ],
+    onSet(a, id, v){ if(id === "destino") a.divisa = v === "fuera"; },
+    title(a){ return `Viaje${a.lugar ? " a " + a.lugar.trim() : ""} · ${a.dias} ${a.dias == 1 ? "día" : "días"}`; },
+    build(a){
+      const b = B();
+      const fuera = a.destino === "fuera", ue = a.destino === "ue", nac = a.destino === "nacional";
+      const tr = a.transporte, avion = tr === "avion", coche = tr === "coche";
+      const conduce = coche || a.alquiler;
+      b.sec("🪪 Documentación")
+        .add("DNI en vigor", !fuera)
+        .add("Pasaporte en vigor (mejor con 6 meses de validez como mínimo)", fuera)
+        .add("Comprobar si necesitas visado o autorización electrónica (ESTA, ETA…)", fuera)
+        .add("Tarjeta Sanitaria Europea", ue)
+        .add("Tarjeta sanitaria", nac)
+        .add("Seguro de viaje con cobertura médica", fuera)
+        .add("Tarjetas de embarque descargadas en el móvil", avion)
+        .add("Billetes descargados", !avion && !coche)
+        .add("Reserva del alojamiento")
+        .add("Carnet de conducir", conduce)
+        .add("Permiso internacional de conducir (si lo exige el país)", fuera && conduce)
+        .add("Reserva del coche de alquiler (y tarjeta de crédito para la fianza)", a.alquiler)
+        .add("Documentación y seguro del coche", coche)
+        .add("Fotos o copias de los documentos en la nube");
+      b.sec("💳 Dinero")
+        .add("Tarjeta de débito o crédito")
+        .add("Tarjeta de reserva, guardada aparte")
+        .add("Activar pagos en el extranjero en la app del banco", !nac)
+        .add("Tarjeta sin comisión por cambio de divisa", a.divisa)
+        .add("Algo de efectivo en moneda local", a.divisa)
+        .add("Algo de efectivo", !a.divisa);
+      b.sec("📱 Móvil y datos")
+        .add("Roaming activado (en la UE pagas como en casa)", ue)
+        .add("Revisar el límite de datos en roaming de tu tarifa", ue)
+        .add("Contratar bono de roaming, eSIM o SIM local", fuera)
+        .add("Si no tienes bono: desactivar los datos en roaming", fuera)
+        .add("Ojo: Reino Unido, Suiza o Andorra no son UE y el roaming se suele cobrar", fuera)
+        .add("Adaptador de enchufe (comprueba el tipo del país)", fuera || (ue && a.lugar && /irlanda|malta|chipre/i.test(a.lugar)))
+        .add("Cargador del móvil").add("Batería externa").add("Auriculares")
+        .add("Mapas sin conexión descargados")
+        .add("App de la aerolínea o del transporte", !coche);
+      if(avion) b.sec("✈️ Avión")
+        .add("Check-in online hecho")
+        .add("Comprobar medidas y peso del equipaje de mano de tu aerolínea")
+        .add("Líquidos: envases de 100 ml como máximo en bolsa transparente (comprueba las normas del aeropuerto)")
+        .add("Batería externa y cigarrillo electrónico siempre en cabina")
+        .add("Nada de objetos cortantes en el equipaje de mano")
+        .add("Etiqueta con tu nombre en la maleta facturada", a.equipaje === "facturado")
+        .add("Pesar la maleta facturada en casa", a.equipaje === "facturado")
+        .add(fuera ? "Llegar al aeropuerto unas 3 h antes" : "Llegar al aeropuerto unas 2 h antes")
+        .add("Cómo ir al aeropuerto (o reservar el parking)")
+        .add("Botella vacía para rellenar después del control")
+        .add("Almohada de viaje y antifaz", fuera);
+      if(tr === "tren") b.sec("🚆 Tren")
+        .add("Llegar unos 30 min antes (hay control de equipaje)")
+        .add("Comida y agua para el trayecto")
+        .add("Series o música descargadas");
+      if(tr === "bus" || tr === "barco") b.sec(tr === "bus" ? "🚌 Autobús" : "⛴️ Barco")
+        .add("Llegar con antelación a la estación o al puerto")
+        .add("Pastillas para el mareo", tr === "barco")
+        .add("Comida y agua para el trayecto")
+        .add("Series o música descargadas");
+      if(coche) b.sec("🚗 Coche")
+        .add("Revisar neumáticos, aceite y líquidos")
+        .add("ITV y seguro en vigor")
+        .add("Baliza V16 y chaleco reflectante")
+        .add("Depósito lleno o batería cargada")
+        .add("Peajes y viñetas del país (Suiza, Austria…)", !nac)
+        .add("Cargador de móvil para el coche")
+        .add("Gafas de sol para conducir")
+        .add("Música o pódcast descargados");
+      if(has(a.con,"ninos")) b.sec("👶 Niños")
+        .add(fuera ? "Pasaporte de los niños" : "DNI de los niños")
+        .add("Autorización de viaje si no viajan con ambos padres", !nac)
+        .add("Juegos y entretenimiento").add("Snacks y agua").add("Toallitas")
+        .add("Silla de coche", conduce).add("Medicinas infantiles (antitérmico)");
+      if(has(a.con,"mascota")) b.sec("🐶 Mascota")
+        .add("Pasaporte europeo o cartilla de la mascota", !nac)
+        .add("Cartilla de vacunas", nac)
+        .add("Comprobar normas del transporte y del alojamiento")
+        .add("Transportín").add("Comida, cuencos y correa").add("Bolsas para excrementos");
+      b.sec("🏁 En destino")
+        .add("Dirección y hora de entrada del alojamiento")
+        .add("Cómo ir del aeropuerto o estación al alojamiento", !coche)
+        .add("Teléfono de emergencias del país (112 en la UE)")
+        .add("Registrarte en el Registro de Viajeros del Ministerio de Exteriores", fuera)
+        .add("Consultar vacunas recomendadas para el país", fuera);
+      if(a.equipaje === "mano" && avion) packing(b, a, {tech:false, mano:true});
+      else packing(b, a, {tech:false});
+      if(a.casa) houseItems(b, {duracion: a.dias > 6 ? "largo" : a.dias > 2 ? "semana" : "finde", extras:[]}, true);
+      return b.done();
+    }
+  },
+
+  maleta: {
+    icon:"🧳", name:"Maleta", desc:"Ropa y neceser según días y tiempo",
+    qs:[
+      {id:"dias", type:"number", label:"¿Cuántos días?", def:3, min:1, max:60},
+      {id:"estacion", type:"choice", label:"¿Qué tiempo esperas?", def:"entretiempo", opts:[["verano","☀️ Calor"],["entretiempo","🌤️ Templado"],["invierno","❄️ Frío"]]},
+      {id:"lluvia", type:"toggle", label:"¿Puede llover?", def:false},
+      {id:"actividades", type:"multi", label:"¿Qué vas a hacer?", def:[], opts:[["ciudad","🏙️ Ciudad"],["playa","🏖️ Playa"],["piscina","🏊 Piscina"],["montana","🥾 Montaña"],["nieve","⛷️ Nieve"],["deporte","🏃 Deporte"],["elegante","🍷 Cena o evento"],["trabajo","💼 Trabajo"]]},
+      {id:"mano", type:"toggle", label:"¿Vas en avión solo con equipaje de mano?", def:false},
+      {id:"lavadora", type:"toggle", label:"¿Podrás lavar ropa?", def:false, show:a => a.dias > 5}
+    ],
+    title(a){ const e = {verano:"calor", invierno:"frío", entretiempo:"templado"}[a.estacion]; return `Maleta · ${a.dias} ${a.dias == 1 ? "día" : "días"} · ${e}`; },
+    build(a){ const b = B(); packing(b, a, {mano:a.mano}); return b.done(); }
+  },
+
+  casa: {
+    icon:"🏠", name:"Salir de casa", desc:"Antes de cerrar la puerta",
+    qs:[
+      {id:"duracion", type:"choice", label:"¿Cuánto tiempo fuera?", def:"semana", opts:[["dia","Un día"],["finde","Fin de semana"],["semana","Una semana"],["largo","Más tiempo"]]},
+      {id:"extras", type:"multi", label:"En casa hay…", def:["gas"], opts:[["gas","🔥 Gas"],["termo","🚿 Termo eléctrico"],["plantas","🌱 Plantas"],["mascotas","🐾 Mascotas"],["alarma","🚨 Alarma"]]}
+    ],
+    title(a){ return "Salir de casa · " + {dia:"un día", finde:"fin de semana", semana:"una semana", largo:"vacaciones largas"}[a.duracion]; },
+    build(a){ const b = B(); houseItems(b, a, false); return b.done(); }
+  },
+
+  entreno: {
+    icon:"🏋️", name:"Entrenamiento", desc:"La mochila del gimnasio o para salir a correr",
+    qs:[
+      {id:"act", type:"multi", label:"¿Qué vas a entrenar?", def:["crossfit"], opts:[["crossfit","🏋️ CrossFit"],["correr","🏃 Correr"],["calistenia","🤸 Calistenia"],["gym","💪 Gimnasio"],["natacion","🏊 Natación"],["bici","🚴 Bici"],["yoga","🧘 Yoga o pilates"]]},
+      {id:"ducha", type:"toggle", label:"¿Te duchas allí?", def:true},
+      {id:"fuera", type:"multi", label:"Si es al aire libre…", def:[], opts:[["frio","❄️ Frío"],["calor","☀️ Calor"],["noche","🌙 De noche"],["lluvia","🌧️ Lluvia"]], show:a => ["correr","calistenia","bici"].some(v => has(a.act, v))},
+      {id:"largo", type:"toggle", label:"¿Sesión de más de 1 hora o competición?", def:false}
+    ],
+    title(a){ const n = {crossfit:"CrossFit", correr:"Correr", calistenia:"Calistenia", gym:"Gimnasio", natacion:"Natación", bici:"Bici", yoga:"Yoga"}; return "Mochila · " + ((a.act || []).map(v => n[v]).join(" + ") || "Entreno"); },
+    build(a){
+      const b = B(), A = a.act || [], f = a.fuera || [];
+      const outdoor = ["correr","calistenia","bici"].some(v => has(A, v));
+      b.sec("🎒 Básicos")
+        .add("Botella de agua").add("Toalla pequeña").add("Móvil").add("Auriculares")
+        .add("Llaves").add("Tarjeta o app de acceso al box o gimnasio", has(A,"crossfit") || has(A,"gym") || has(A,"natacion"))
+        .add("Candado para la taquilla", has(A,"gym") || has(A,"natacion") || a.ducha)
+        .add("Ropa de entrenar").add("Calcetines");
+      if(has(A,"crossfit")) b.sec("🏋️ CrossFit")
+        .add("Zapatillas de cross training").add("Comba").add("Calleras o grips")
+        .add("Muñequeras").add("Rodilleras").add("Cinturón de levantamiento")
+        .add("Magnesio").add("Tape o cinta para pulgares").add("Zapatillas de halterofilia", a.largo);
+      if(has(A,"correr")) b.sec("🏃 Correr")
+        .add("Zapatillas de correr").add("Reloj GPS cargado").add("Cinturón o brazalete para el móvil")
+        .add("Vaselina antirrozaduras", a.largo).add("Geles o dátiles", a.largo)
+        .add("Dorsal e imperdibles", a.largo);
+      if(has(A,"calistenia")) b.sec("🤸 Calistenia")
+        .add("Calleras").add("Magnesio").add("Bandas elásticas").add("Paralelas portátiles")
+        .add("Esterilla").add("Lastre o cinturón de lastre", a.largo);
+      if(has(A,"gym")) b.sec("💪 Gimnasio")
+        .add("Zapatillas de entreno").add("Toalla para la máquina").add("Guantes o straps").add("Rutina apuntada en el móvil");
+      if(has(A,"natacion")) b.sec("🏊 Natación")
+        .add("Bañador").add("Gorro").add("Gafas de natación").add("Chanclas").add("Toalla grande");
+      if(has(A,"bici")) b.sec("🚴 Bici")
+        .add("Casco").add("Culotte").add("Guantes").add("Bidón").add("Kit de pinchazos y bomba")
+        .add("Luces delantera y trasera", has(f,"noche"));
+      if(has(A,"yoga")) b.sec("🧘 Yoga o pilates")
+        .add("Esterilla").add("Ropa cómoda").add("Calcetines antideslizantes");
+      if(outdoor && f.length) b.sec("🌦️ Al aire libre")
+        .add("Capa térmica y guantes", has(f,"frio")).add("Gorro o cinta para las orejas", has(f,"frio"))
+        .add("Gorra y gafas de sol", has(f,"calor")).add("Crema solar", has(f,"calor")).add("Agua extra o sales", has(f,"calor"))
+        .add("Chaleco reflectante o luz", has(f,"noche")).add("Frontal", has(f,"noche") && has(A,"correr"))
+        .add("Chubasquero ligero", has(f,"lluvia"));
+      if(a.ducha) b.sec("🚿 Ducha")
+        .add("Chanclas").add("Gel y champú").add("Toalla de ducha").add("Desodorante")
+        .add("Ropa interior limpia").add("Ropa para después").add("Bolsa para la ropa sucia");
+      b.sec("🍌 Recuperación")
+        .add("Snack o fruta").add("Batido de proteína", a.largo || has(A,"crossfit") || has(A,"gym"))
+        .add("Sales minerales", a.largo);
+      return b.done();
+    }
+  },
+
+  trabajo: {
+    icon:"💼", name:"Trabajo", desc:"Oficina, teletrabajo, visita a cliente…",
+    qs:[
+      {id:"modo", type:"choice", label:"¿Qué toca hoy?", def:"oficina", opts:[["oficina","🏢 Oficina"],["casa","🏠 Teletrabajo"],["cliente","🤝 Visita a cliente"],["viaje","🧳 Viaje de trabajo"]]},
+      {id:"extras", type:"multi", label:"Además…", def:["portatil"], opts:[["portatil","💻 Llevo portátil"],["comida","🥗 Como fuera"],["reunion","📊 Reunión importante"],["gym","🏋️ Entreno después"]]}
+    ],
+    title(a){ return "Trabajo · " + {oficina:"oficina", casa:"teletrabajo", cliente:"visita a cliente", viaje:"viaje de trabajo"}[a.modo]; },
+    build(a){
+      const b = B(), e = a.extras || [], sale = a.modo !== "casa", m = a.modo;
+      if(sale) b.sec("👜 Lo de siempre")
+        .add("Llaves").add("Cartera").add("Móvil y cargador").add("Tarjeta de acceso a la oficina", m === "oficina")
+        .add("Auriculares").add("Gafas").add("Abono de transporte").add("Paraguas si hay previsión de lluvia");
+      if(has(e,"portatil")) b.sec("💻 Equipo")
+        .add("Portátil cargado").add("Cargador del portátil").add("Ratón").add("Adaptador USB-C / HDMI", m !== "casa");
+      if(m === "casa") b.sec("🏠 Teletrabajo")
+        .add("VPN conectada").add("Cámara y micro probados").add("Agenda del día revisada").add("Pausas programadas");
+      if(m === "cliente" || has(e,"reunion")) b.sec("📊 Reunión")
+        .add("Presentación descargada (por si no hay wifi)").add("Agenda y objetivos de la reunión")
+        .add("Cuaderno y boli").add("Ropa adecuada").add("Dirección y cómo llegar", m === "cliente")
+        .add("Tarjetas de visita", m === "cliente");
+      if(m === "viaje") b.sec("🧳 Viaje de trabajo")
+        .add("DNI o pasaporte").add("Billetes y reservas").add("Política de gastos y tarjeta de empresa")
+        .add("Guardar los tickets de gastos").add("Ropa para los días de viaje").add("Neceser");
+      if(has(e,"comida")) b.sec("🥗 Comida")
+        .add("Tupper").add("Cubiertos").add("Botella de agua").add("Snack para media mañana");
+      if(has(e,"gym")) b.sec("🏋️ Para entrenar después")
+        .add("Ropa de entrenar").add("Zapatillas").add("Toalla").add("Neceser de ducha");
+      return b.done();
+    }
+  }
+};
+
+function houseItems(b, a, short){
+  const d = a.duracion, ex = a.extras || [];
+  const lejos = d !== "dia", mucho = d === "semana" || d === "largo";
+  const P = short ? "🏠 Antes de salir de casa" : null;
+  const sec = t => b.sec(P || t);
+  sec("🚰 Agua, gas y luz")
+    .add("Cerrar la llave de paso del agua", mucho)
+    .add("Cerrar la llave del gas", (has(ex,"gas") || short) && lejos)
+    .add("Apagar el termo eléctrico", (has(ex,"termo") || short) && mucho)
+    .add("Apagar calefacción o aire acondicionado (o modo vacaciones)", lejos)
+    .add("Desenchufar tele, ordenador y pequeños electrodomésticos", lejos)
+    .add("Fuegos y horno apagados")
+    .add("Plancha y secador desenchufados", !short)
+    .add("Grifos bien cerrados", !short);
+  sec("🍎 Cocina")
+    .add("Vaciar la nevera de lo que caduca", mucho)
+    .add("Sacar la basura", lejos)
+    .add("Lavavajillas y lavadora vacíos, con la puerta entreabierta", lejos)
+    .add("No dejar platos sucios", lejos && !short);
+  sec("🔒 Seguridad")
+    .add("Ventanas cerradas")
+    .add("Dejar alguna persiana a media altura para que parezca habitado", mucho)
+    .add("Programar luces con temporizador o enchufe inteligente", d === "largo")
+    .add("Activar la alarma", has(ex,"alarma"))
+    .add("Avisar a un vecino o familiar de confianza", mucho)
+    .add("Dejar una copia de las llaves a alguien de confianza", mucho)
+    .add("Pedir que vacíen el buzón", d === "largo")
+    .add("No publicar el viaje en redes hasta volver", lejos)
+    .add("Cerrar la puerta con llave (todas las vueltas)");
+  if(has(ex,"plantas")) sec("🌱 Plantas")
+    .add("Regar bien las plantas o dejar riego por goteo", lejos)
+    .add("Apartar las plantas del sol directo", mucho);
+  if(has(ex,"mascotas")) sec("🐾 Mascotas")
+    .add("Cuidador o residencia para la mascota", lejos)
+    .add("Comida, medicación e instrucciones para el cuidador", lejos)
+    .add("Agua y comida suficientes", !lejos);
+  if(!short) sec("🎒 Lo que te llevas")
+    .add("Llaves de casa").add("Cartera y documentación").add("Móvil y cargador")
+    .add("Medicación").add("Gafas");
+}
+
+/* ============ Modelo ============ */
+function makeList(name, icon, sections){
+  return { id:uid(), name, icon, created:Date.now(),
+    sections:sections.map(s => ({ id:uid(), title:s.title, items:s.items.map(t => ({id:uid(), t:typeof t === "string" ? t : t.t, d:false})) })) };
+}
+const getList = id => S.lists.find(l => l.id === id);
+const count = l => { let n = 0, d = 0; l.sections.forEach(s => s.items.forEach(i => { n++; if(i.d) d++; })); return {n, d}; };
+const plain = l => l.sections.map(s => ({title:s.title, items:s.items.map(i => i.t)}));
+const snap = () => JSON.stringify(S);
+function restore(j){ S = JSON.parse(j); save(); render(); }
+
+/* ============ Navegación ============ */
+let view = {name:"home"};
+let ui = {edit:false, hide:false};
+function go(v, replace){ view = v; ui.edit = false; ui.hide = false; replace ? history.replaceState(v, "") : history.pushState(v, ""); render(); scrollTo(0, 0); }
+addEventListener("popstate", e => { closeSheet(); view = e.state || {name:"home"}; ui.edit = false; render(); });
+
+/* ============ Vistas ============ */
+function render(){
+  const app = $("#app");
+  if(view.name === "list" && !getList(view.id)) view = {name:"home"};
+  app.innerHTML = view.name === "wizard" ? wizardHTML() : view.name === "list" ? listHTML() : homeHTML();
+}
+
+function homeHTML(){
+  const lists = [...S.lists].sort((a, b) => b.created - a.created);
+  let h = `<div class="top" style="padding-bottom:0"><span style="flex:1"></span><button class="ib" data-act="info" aria-label="Información">⚙️</button></div>
+  <div class="hero"><h1>Repaso</h1><p>Que no se te olvide nada.</p></div><div class="wrap">`;
+  if(!lists.length){
+    h += `<div class="empty"><div class="big">📝</div><p>Aún no tienes listas. Elige una para empezar:</p></div>${tilesHTML()}`;
+  } else {
+    h += `<div class="h2">Mis listas</div>` + lists.map(l => { const c = count(l); const p = c.n ? Math.round(c.d / c.n * 100) : 0;
+      return `<button class="card lc" data-act="open" data-id="${l.id}"><span class="em">${esc(l.icon)}</span><span class="tx"><b>${esc(l.name)}</b><small>${c.d} de ${c.n}${c.n && c.d === c.n ? " · ¡todo listo!" : ""}</small><span class="bar"><i style="width:${p}%"></i></span></span></button>`; }).join("");
+  }
+  h += `</div><button class="fab" data-act="new">＋ Nueva lista</button>`;
+  return h;
+}
+
+function tilesHTML(){
+  let h = `<div class="grid">` + Object.entries(T).map(([k, t]) =>
+    `<button class="card tile" data-act="tpl" data-k="${k}"><span class="em">${t.icon}</span><b>${t.name}</b><small>${t.desc}</small></button>`).join("") +
+    `<button class="card tile" data-act="blank"><span class="em">✏️</span><b>Lista vacía</b><small>Empieza de cero</small></button></div>`;
+  if(S.templates.length) h += `<div class="h2">Mis plantillas</div><div class="grid">` + S.templates.map(t =>
+    `<div class="card tile" style="padding:0"><button style="padding:14px;text-align:left;display:flex;flex-direction:column;gap:4px;height:100%;width:100%" data-act="mytpl" data-id="${t.id}"><span class="em">${esc(t.icon)}</span><b>${esc(t.name)}</b><small>${t.sections.reduce((n, s) => n + s.items.length, 0)} cosas</small></button><button class="x" data-act="deltpl" data-id="${t.id}" aria-label="Borrar plantilla">✕</button></div>`).join("") + `</div>`;
+  return h;
+}
+
+function wizardHTML(){
+  const t = T[view.k], a = view.a;
+  return `<div class="top"><button class="ib" data-act="back" aria-label="Atrás">←</button><h1>${t.icon} ${t.name}</h1></div>
+  <div class="wrap">${t.qs.map(q => qHTML(q, a)).join("")}
+  <button class="btn" data-act="create">Crear lista</button></div>`;
+}
+
+function qHTML(q, a){
+  if(q.show && !q.show(a)) return "";
+  const chip = (on, act, v, l) => `<button class="chip ${on ? "on" : ""}" data-act="${act}" data-q="${q.id}" data-v="${v}">${l}</button>`;
+  let body = "";
+  if(q.type === "choice") body = `<div class="chips">${q.opts.map(([v, l]) => chip(a[q.id] === v, "ans", v, l)).join("")}</div>`;
+  if(q.type === "multi") body = `<div class="chips">${q.opts.map(([v, l]) => chip(has(a[q.id], v), "ans", v, l)).join("")}</div>`;
+  if(q.type === "toggle") body = `<div class="chips">${chip(a[q.id], "ans", "1", "Sí")}${chip(!a[q.id], "ans", "0", "No")}</div>`;
+  if(q.type === "number") body = `<div class="step"><button data-act="num" data-q="${q.id}" data-v="-1" aria-label="Menos">−</button><output>${a[q.id]}</output><button data-act="num" data-q="${q.id}" data-v="1" aria-label="Más">+</button></div>`;
+  if(q.type === "text") body = `<input class="inp" data-in="ans" data-q="${q.id}" value="${esc(a[q.id] || "")}" placeholder="${esc(q.ph || "")}">`;
+  return `<div class="card q"><span class="ql">${q.label}</span>${body}</div>`;
+}
+
+function listHTML(){
+  const l = getList(view.id), c = count(l), p = c.n ? Math.round(c.d / c.n * 100) : 0, E = ui.edit;
+  let h = `<div class="top"><button class="ib" data-act="back" aria-label="Atrás">←</button>` +
+    (E ? `<input class="inp" style="flex:1" data-in="lname" value="${esc(l.name)}">` : `<h1>${esc(l.icon)} ${esc(l.name)}</h1>`) +
+    `<button class="ib ${E ? "on" : ""}" data-act="edit" aria-label="Editar">${E ? "✓" : "✏️"}</button><button class="ib" data-act="menu" aria-label="Más opciones">⋯</button></div>
+  <div class="prog"><div class="row"><span>${c.d} de ${c.n} repasados</span><span>${p}%</span></div><div class="bar"><i style="width:${p}%"></i></div></div>`;
+  if(c.n && c.d === c.n && !E) h += `<div class="party">🎉 ¡Todo listo! Buen viaje… o buen entreno.</div>`;
+  if(E) h += `<p class="hint">Modo edición: cambia los textos o borra secciones. Pulsa ✓ al acabar.</p>`;
+  h += l.sections.map(s => {
+    const items = s.items.filter(i => E || !ui.hide || !i.d);
+    const sd = s.items.filter(i => i.d).length;
+    return `<div class="card sec"><div class="sh">` +
+      (E ? `<input class="inp" style="padding:8px 10px" data-in="stitle" data-s="${s.id}" value="${esc(s.title)}"><button class="del" data-act="delsec" data-s="${s.id}" aria-label="Borrar sección">🗑️</button>`
+         : `<h3>${esc(s.title)}</h3><span class="ct">${sd}/${s.items.length}</span>`) + `</div>` +
+      items.map(i => `<div class="it ${i.d ? "d" : ""}">` +
+        (E ? `<input class="inp" data-in="itext" data-s="${s.id}" data-i="${i.id}" value="${esc(i.t)}">`
+           : `<button class="chk" data-act="tog" data-s="${s.id}" data-i="${i.id}"><span class="box"></span><span class="t">${esc(i.t)}</span></button>`) +
+        `<button class="del" data-act="delit" data-s="${s.id}" data-i="${i.id}" aria-label="Quitar">✕</button></div>`).join("") +
+      `<form class="add" data-form="add" data-s="${s.id}"><input name="t" placeholder="Añadir algo…" enterkeyhint="done" autocomplete="off"><button aria-label="Añadir">+</button></form></div>`;
+  }).join("");
+  h += `<div class="wrap"><form data-form="addsec" style="display:flex;gap:8px;margin-top:6px"><input class="inp" name="t" placeholder="Nueva sección (ej.: Para el avión)" autocomplete="off"><button class="ib" style="background:var(--soft);color:var(--accent);font-weight:700">+</button></form></div>`;
+  if(ui.hide && c.d) h += `<p class="hint" style="text-align:center">${c.d} marcados ocultos · <a href="#" data-act="hide" style="color:var(--accent)">mostrar</a></p>`;
+  return h;
+}
+
+/* ============ Hojas inferiores y avisos ============ */
+function openSheet(html){ closeSheet(); const o = document.createElement("div"); o.className = "ov"; o.id = "ov";
+  o.innerHTML = `<div class="sheet"><div class="grab"></div>${html}</div>`;
+  o.addEventListener("click", e => { if(e.target === o) closeSheet(); }); document.body.appendChild(o); }
+function closeSheet(){ const o = $("#ov"); if(o) o.remove(); }
+let tT;
+function toast(msg, undo){ const old = $(".toast"); if(old) old.remove(); clearTimeout(tT);
+  const d = document.createElement("div"); d.className = "toast"; d.innerHTML = `<span>${esc(msg)}</span>${undo ? '<button>Deshacer</button>' : ""}`;
+  if(undo) d.querySelector("button").onclick = () => { undo(); d.remove(); };
+  document.body.appendChild(d); tT = setTimeout(() => d.remove(), 4500); }
+
+/* ============ Compartir / importar ============ */
+const b64e = s => { const b = new TextEncoder().encode(s); let r = ""; b.forEach(c => r += String.fromCharCode(c)); return btoa(r).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
+const b64d = s => { const r = atob(s.replace(/-/g,"+").replace(/_/g,"/")); return new TextDecoder().decode(Uint8Array.from(r, c => c.charCodeAt(0))); };
+function asText(l){ return `${l.icon} ${l.name}\n\n` + l.sections.map(s => `${s.title}\n` + s.items.map(i => `${i.d ? "☑" : "☐"} ${i.t}`).join("\n")).join("\n\n"); }
+async function shareOrCopy(title, text){
+  if(navigator.share){ try{ await navigator.share({title, text}); return; }catch(e){ if(e.name === "AbortError") return; } }
+  try{ await navigator.clipboard.writeText(text); toast("Copiado al portapapeles"); }catch(e){ toast("No se ha podido copiar"); }
+}
+function linkFor(l){ const data = {n:l.name, i:l.icon, s:l.sections.map(s => [s.title, s.items.map(i => i.t)])};
+  return location.origin + location.pathname + "#import=" + b64e(JSON.stringify(data)); }
+function checkImport(){
+  const m = location.hash.match(/^#import=(.+)$/); if(!m) return;
+  history.replaceState(view, "", location.pathname);
+  try{ const d = JSON.parse(b64d(m[1])); const secs = d.s.map(([title, items]) => ({title, items}));
+    openSheet(`<h2>${esc(d.i)} ${esc(d.n)}</h2><p>Te han compartido esta lista (${secs.reduce((n, s) => n + s.items.length, 0)} cosas). ¿La añades a tus listas?</p>
+      <button class="btn" id="imp">Añadir a mis listas</button><button class="btn sec" data-act="close">Ahora no</button>`);
+    $("#imp").onclick = () => { const l = makeList(d.n, d.i || "📋", secs); S.lists.push(l); save(); closeSheet(); go({name:"list", id:l.id}); };
+  }catch(e){ toast("El enlace de la lista no es válido"); }
+}
+
+/* ============ Instalación ============ */
+let installEvt = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; });
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+
+/* ============ Acciones ============ */
+const ACT = {
+  new(){ openSheet(`<h2>Nueva lista</h2>${tilesHTML()}`); },
+  close(){ closeSheet(); },
+  tpl(el){ closeSheet(); const t = T[el.dataset.k]; const a = {};
+    t.qs.forEach(q => a[q.id] = Array.isArray(q.def) ? [...q.def] : q.def);
+    go({name:"wizard", k:el.dataset.k, a}); },
+  blank(){ closeSheet(); const l = makeList("Mi lista", "📋", [{title:"📋 General", items:[]}]); S.lists.push(l); save(); go({name:"list", id:l.id}); ui.edit = true; render(); },
+  mytpl(el){ closeSheet(); const t = S.templates.find(t => t.id === el.dataset.id); const l = makeList(t.name, t.icon, t.sections); S.lists.push(l); save(); go({name:"list", id:l.id}); },
+  deltpl(el){ const b = snap(); S.templates = S.templates.filter(t => t.id !== el.dataset.id); save(); ACT.new(); toast("Plantilla borrada", () => { restore(b); ACT.new(); }); },
+  ans(el){ const t = T[view.k], q = t.qs.find(q => q.id === el.dataset.q), a = view.a, v = el.dataset.v;
+    if(q.type === "multi"){ a[q.id] = has(a[q.id], v) ? a[q.id].filter(z => z !== v) : [...(a[q.id] || []), v]; }
+    else if(q.type === "toggle") a[q.id] = v === "1";
+    else { a[q.id] = v; t.onSet && t.onSet(a, q.id, v); }
+    history.replaceState(view, ""); render(); },
+  num(el){ const q = T[view.k].qs.find(q => q.id === el.dataset.q); const a = view.a;
+    a[q.id] = Math.min(q.max, Math.max(q.min, (a[q.id] | 0) + (+el.dataset.v))); history.replaceState(view, ""); render(); },
+  create(){ const t = T[view.k]; const secs = t.build(view.a);
+    const l = makeList(t.title(view.a), t.icon, secs); S.lists.push(l); save();
+    view = {name:"list", id:l.id}; ui.edit = false; ui.hide = false; history.replaceState(view, ""); render(); scrollTo(0, 0); },
+  back(){ history.length > 1 && history.state && history.state.name !== "home" ? history.back() : go({name:"home"}, true); },
+  open(el){ go({name:"list", id:el.dataset.id}); },
+  tog(el){ const l = getList(view.id); const i = l.sections.find(s => s.id === el.dataset.s).items.find(i => i.id === el.dataset.i);
+    i.d = !i.d; save(); render(); if(navigator.vibrate && i.d) navigator.vibrate(8); },
+  delit(el){ const b = snap(); const s = getList(view.id).sections.find(s => s.id === el.dataset.s); const it = s.items.find(i => i.id === el.dataset.i);
+    s.items = s.items.filter(i => i.id !== el.dataset.i); save(); render(); toast(`Quitado: ${it.t}`, () => restore(b)); },
+  delsec(el){ const b = snap(); const l = getList(view.id); l.sections = l.sections.filter(s => s.id !== el.dataset.s); save(); render(); toast("Sección borrada", () => restore(b)); },
+  edit(){ ui.edit = !ui.edit; render(); },
+  hide(el, e){ e && e.preventDefault(); ui.hide = !ui.hide; closeSheet(); render(); },
+  menu(){ const l = getList(view.id); const c = count(l);
+    openSheet(`<h2>${esc(l.name)}</h2>
+      <button class="mi" data-act="reset">🔄 Desmarcar todo (para volver a usarla)</button>
+      <button class="mi" data-act="hide">${ui.hide ? "👁️ Mostrar los marcados" : "🙈 Ocultar los marcados"}</button>
+      <button class="mi" data-act="savetpl">⭐ Guardar como mi plantilla</button>
+      <button class="mi" data-act="sharetxt">💬 Compartir como texto</button>
+      <button class="mi" data-act="sharelink">🔗 Enviar enlace para importarla</button>
+      <button class="mi" data-act="dup">📄 Duplicar</button>
+      <button class="mi red" data-act="dellist">🗑️ Borrar lista</button>`); },
+  reset(){ const b = snap(); getList(view.id).sections.forEach(s => s.items.forEach(i => i.d = false)); save(); closeSheet(); render(); toast("Lista desmarcada", () => restore(b)); },
+  savetpl(){ const l = getList(view.id); S.templates.push({id:uid(), name:l.name, icon:l.icon, sections:plain(l)}); save(); closeSheet(); toast("Guardada en «Mis plantillas»"); },
+  sharetxt(){ const l = getList(view.id); closeSheet(); shareOrCopy(l.name, asText(l)); },
+  sharelink(){ const l = getList(view.id); closeSheet(); shareOrCopy(l.name, `Te paso mi lista «${l.name}» para la app Repaso:\n${linkFor(l)}`); },
+  dup(){ const l = getList(view.id); const n = makeList(l.name + " (copia)", l.icon, plain(l)); S.lists.push(n); save(); closeSheet(); go({name:"list", id:n.id}, true); toast("Lista duplicada"); },
+  dellist(){ const b = snap(); S.lists = S.lists.filter(x => x.id !== view.id); save(); closeSheet(); go({name:"home"}, true); toast("Lista borrada", () => restore(b)); },
+  info(){
+    let inst = "";
+    if(!standalone){
+      inst = isIOS ? `<h2>📲 Instalar en iPhone</h2><ol><li>Abre esta página en <b>Safari</b>.</li><li>Pulsa el botón <b>Compartir</b> (cuadrado con flecha).</li><li>Elige <b>Añadir a pantalla de inicio</b>.</li></ol>`
+        : installEvt ? `<h2>📲 Instalar</h2><button class="btn" data-act="install">Instalar la app</button>`
+        : `<h2>📲 Instalar en Android</h2><ol><li>Abre esta página en <b>Chrome</b>.</li><li>Menú <b>⋮</b> → <b>Instalar aplicación</b> (o «Añadir a pantalla de inicio»).</li></ol>`;
+    }
+    openSheet(`${inst}<h2>💾 Copia de seguridad</h2><p>Tus listas se guardan solo en este móvil. Haz una copia de vez en cuando o para pasarlas a otro móvil.</p>
+      <button class="mi" data-act="export">⬇️ Descargar copia</button>
+      <label class="mi" style="cursor:pointer">⬆️ Restaurar copia<input type="file" accept=".json,application/json" id="impf" hidden></label>
+      <p style="margin-top:16px;font-size:13px">Repaso · ${S.lists.length} listas · ${S.templates.length} plantillas propias</p>`);
+    const f = $("#impf"); if(f) f.onchange = importFile;
+  },
+  async install(){ if(!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; closeSheet(); },
+  export(){ const blob = new Blob([JSON.stringify(S, null, 1)], {type:"application/json"}); const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = `repaso-copia-${new Date().toISOString().slice(0, 10)}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); }
+};
+function importFile(e){
+  const file = e.target.files[0]; if(!file) return; const r = new FileReader();
+  r.onload = () => { try{ const d = JSON.parse(r.result); if(!Array.isArray(d.lists)) throw 0;
+      const have = new Set(S.lists.map(l => l.id)); let n = 0;
+      d.lists.forEach(l => { if(!have.has(l.id)){ S.lists.push(l); n++; } });
+      const ht = new Set(S.templates.map(t => t.id)); (d.templates || []).forEach(t => { if(!ht.has(t.id)) S.templates.push(t); });
+      save(); closeSheet(); render(); toast(`${n} listas recuperadas`);
+    }catch(err){ toast("Ese archivo no es una copia válida"); } };
+  r.readAsText(file);
+}
+
+document.addEventListener("click", e => { const t = e.target.closest("[data-act]"); if(!t) return; const f = ACT[t.dataset.act]; if(f){ if(t.tagName === "A") e.preventDefault(); f(t, e); } });
+document.addEventListener("submit", e => {
+  const f = e.target; e.preventDefault(); const v = (f.t.value || "").trim(); if(!v) return;
+  const l = getList(view.id);
+  if(f.dataset.form === "add"){ const s = l.sections.find(s => s.id === f.dataset.s); s.items.push({id:uid(), t:v, d:false}); save(); render();
+    const inp = document.querySelector(`form[data-s="${s.id}"] input`); if(inp) inp.focus(); }
+  if(f.dataset.form === "addsec"){ l.sections.push({id:uid(), title:v, items:[]}); save(); render();
+    const forms = document.querySelectorAll('form[data-form="add"] input'); const last = forms[forms.length - 1]; if(last) last.focus(); }
+});
+document.addEventListener("input", e => {
+  const el = e.target, k = el.dataset.in; if(!k) return;
+  if(k === "ans"){ view.a[el.dataset.q] = el.value; history.replaceState(view, ""); return; }
+  const l = getList(view.id); if(!l) return;
+  if(k === "lname") l.name = el.value;
+  if(k === "stitle") l.sections.find(s => s.id === el.dataset.s).title = el.value;
+  if(k === "itext") l.sections.find(s => s.id === el.dataset.s).items.find(i => i.id === el.dataset.i).t = el.value;
+  save();
+});
+
+/* ============ Arranque ============ */
+history.replaceState(view, "");
+render();
+checkImport();
+if("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
