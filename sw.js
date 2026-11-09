@@ -1,5 +1,5 @@
 // Repaso · service worker: funciona sin conexión
-const CACHE = "repaso-v3";
+const CACHE = "repaso-v4";
 const ASSETS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", e => {

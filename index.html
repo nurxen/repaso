@@ -330,7 +330,8 @@ function prof(a){
 }
 
 /* ===================== Tiempo (Open-Meteo, sin clave) ===================== */
-const iso = d => d.toISOString().slice(0, 10);
+const localISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const iso = localISO;
 async function fetchWx(a){
   if(!a.place || a.place.lat == null || !a.fecha || !navigator.onLine) return;
   const key = `${a.place.lat},${a.place.lon},${a.fecha},${a.dias}`;
@@ -364,7 +365,8 @@ async function fetchWx(a){
   if(view.name === "wizard" && view.a === a){ const q = curQ(); if(!q || !["text","date","place"].includes(q.type)) render(); }
 }
 function wxCard(a){
-  const w = a.wx; if(!w) return a.place && !a.fecha ? `<div class="info">💡 Si pones la fecha de salida, miro el tiempo que hará en ${esc(a.place.name)}.</div>` : "";
+  if(!a.place || a.place.lat == null) return "";
+  const w = a.wx; if(!w) return !a.fecha ? `<div class="info">💡 Si pones la fecha de salida, miro el tiempo que hará en ${esc(a.place.name)}.</div>` : "";
   if(w.loading) return `<div class="info">⏳ Mirando el tiempo en ${esc(a.place.name)}…</div>`;
   if(w.error) return `<div class="info">No he podido consultar el tiempo. Elige tú:</div>`;
   return `<div class="info"><b>${w.rain ? "🌧️" : w.est === "verano" ? "☀️" : w.est === "invierno" ? "❄️" : "🌤️"} ${esc(a.place.name)}: entre ${w.tmin} y ${w.tmax} °C${w.rain ? ", con lluvia probable" : ""}</b><small>${w.src}. Ya lo he marcado; cámbialo si quieres.</small></div>`;
@@ -374,16 +376,23 @@ function wxCard(a){
 function packing(b, a, opt = {}){
   const n = Math.max(1, a.dias | 0);
   const lav = a.lavadora && n > 5;
-  const c = lav ? Math.min(n, 5) : n;
+  const c = lav ? Math.min(n, 5) : Math.min(n, 10);
+  const mot = a.motivo || "ocio", dress = mot === "ocio" ? "informal" : (a.dress || "smart");
+  const W = (mot === "trabajo" || mot === "curso") ? Math.max(0, Math.min(a.diasTrab ?? n, n)) : mot === "evento" ? 1 : 0;
+  const Wc = lav ? Math.min(W, 5) : Math.min(W, 10);
+  const formal = W > 0 && dress !== "informal";
+  const casual = Math.max(1, c - (formal ? Wc : 0) + (formal ? 1 : 0));
   const est = a.estacion, act = a.actividades || [];
   const calor = est === "verano", frio = est === "invierno", templ = est === "entretiempo";
   const agua = has(act,"playa") || has(act,"piscina");
   const sol = calor || agua || has(act,"nieve") || has(act,"montana");
 
   b.sec("👕 Ropa")
-    .add(x("Ropa interior", c + 1)).add(x("Calcetines", c + 1)).add(x("Camisetas", c))
-    .add(x("Pantalones largos", Math.max(1, Math.ceil(c / (calor ? 4 : 3)))))
-    .add(x("Pantalones cortos", Math.max(1, Math.ceil(c / 3))), calor)
+    .add(x("Ropa interior", c + 1))
+    .add(x("Calcetines", formal && dress === "traje" ? Math.max(1, casual) : c + 1))
+    .add(x("Camisetas", casual))
+    .add(x("Pantalones largos", Math.max(1, Math.ceil(casual / (calor ? 4 : 3)))))
+    .add(x("Pantalones cortos", Math.max(1, Math.ceil(casual / 3))), calor)
     .add(x("Pijama", n > 4 ? 2 : 1))
     .add("Calzado cómodo para caminar")
     .add(x("Sudadera o jersey", n > 4 ? 2 : 1), !calor)
@@ -391,7 +400,30 @@ function packing(b, a, opt = {}){
     .add("Abrigo", frio).add("Gorro, guantes y bufanda", frio).add("Camiseta térmica", frio)
     .add("Chubasquero o paraguas plegable", a.lluvia || templ)
     .add("Bolsa para la ropa sucia", n > 1)
-    .add("Detergente de viaje", lav);
+    .add("Detergente de viaje", lav)
+    .add("Lavar ropa a mitad de viaje (busca lavandería cerca)", !lav && n > 10);
+  if(formal && mot !== "evento"){
+    const sec = b.sec(dress === "traje" ? "👔 Ropa de trabajo (traje)" : "👔 Ropa de trabajo (arreglado)");
+    if(dress === "traje") sec
+      .add(x("!Traje", Math.max(1, Math.ceil(Wc / 3))))
+      .add(x("Camisas o blusas", Wc + (Wc >= 3 ? 1 : 0)))
+      .add(x("Corbatas o pañuelos", Math.min(Wc, 3)))
+      .add(x("Calcetines de vestir o medias", Wc + 1))
+      .add("Zapatos de vestir").add("Cinturón")
+      .add("Funda portatrajes", Wc >= 2 || a.equipaje === "facturado")
+      .add("Plancha o vaporizador de viaje", Wc >= 3)
+      .add("Gemelos o complementos");
+    else sec
+      .add(x("Camisas, blusas o polos", Wc + (Wc >= 3 ? 1 : 0)))
+      .add(x("Pantalones de vestir o chinos", Math.max(1, Math.ceil(Wc / 2))))
+      .add("Americana o blazer")
+      .add("Zapatos arreglados").add("Cinturón")
+      .add("Jersey fino (por el aire acondicionado)", Wc >= 2);
+  }
+  if(mot === "evento") b.sec("🎩 Para el evento")
+    .add(dress === "traje" ? "!Traje o vestido de fiesta" : dress === "smart" ? "!Conjunto arreglado" : "Ropa para el evento")
+    .add("Zapatos para el evento", dress !== "informal").add("Complementos").add("Chaqueta o chal para la noche")
+    .add("Regalo o sobre", true).add("Invitación o entrada");
   if(agua) b.sec("🏖️ Playa y piscina")
     .add(x("Bañador", n > 2 ? 2 : 1)).add("Toalla de playa").add("Chanclas")
     .add("Gorra o sombrero").add("After sun").add("Funda estanca para el móvil", has(act,"playa"));
@@ -405,8 +437,8 @@ function packing(b, a, opt = {}){
     .add("Ropa deportiva").add("Zapatillas de deporte").add("Botella reutilizable");
   if(has(act,"elegante")) b.sec("🍷 Para arreglarse")
     .add("Conjunto arreglado").add("Zapatos de vestir").add("Complementos");
-  if(has(act,"trabajo")) b.sec("💼 Trabajo")
-    .add("!Portátil y cargador").add("Ropa formal").add("Documentación de las reuniones").add("Adaptador USB-C / HDMI");
+  if(W > 0 && mot !== "evento" && !opt.workDone) b.sec("💼 Trabajo")
+    .add("!Portátil y cargador").add("Documentación del trabajo o del curso").add("Cuaderno y bolígrafo").add("Adaptador USB-C / HDMI");
 
   const liq = opt.mano;
   b.sec("🧴 Neceser")
@@ -431,8 +463,8 @@ function houseItems(b, a, inTrip){
   const sec = t => b.sec(one || t, "do", inTrip ? "salir" : undefined);
   sec("🚰 Agua, gas y luz")
     .add("Cerrar la llave de paso del agua", mucho)
-    .add("!Cerrar la llave del gas", (has(ex,"gas") || inTrip) && lejos)
-    .add("Apagar el termo eléctrico", (has(ex,"termo") || inTrip) && mucho)
+    .add(inTrip ? "!Cerrar la llave del gas (si tienes)" : "!Cerrar la llave del gas", (has(ex,"gas") || inTrip) && lejos)
+    .add(inTrip ? "Apagar el termo eléctrico (si tienes)" : "Apagar el termo eléctrico", (has(ex,"termo") || inTrip) && mucho)
     .add("Apagar calefacción o aire acondicionado (o modo vacaciones)", lejos)
     .add("Desenchufar tele, ordenador y pequeños electrodomésticos", lejos)
     .add("!Fuegos y horno apagados")
@@ -469,28 +501,44 @@ function houseItems(b, a, inTrip){
 const DIAS = {id:"dias", type:"number", label:"¿Cuántos días?", hint:"Con esto calculo cuánta ropa necesitas.", def:3, min:1, max:60, quick:[1,2,3,5,7,10,14]};
 const TIEMPO = {id:"estacion", type:"choice", label:"¿Qué tiempo va a hacer?", def:"entretiempo", opts:[["verano","☀️","Calor"],["entretiempo","🌤️","Templado"],["invierno","❄️","Frío"]]};
 const LLUVIA = {id:"lluvia", type:"toggle", label:"¿Puede llover?", hint:"Añadiré paraguas o chubasquero.", def:false};
-const ACTS = {id:"actividades", type:"multi", label:"¿Qué vas a hacer?", hint:"Puedes elegir varias.", def:[], opts:[["ciudad","🏙️","Ciudad"],["playa","🏖️","Playa"],["piscina","🏊","Piscina"],["montana","🥾","Montaña"],["nieve","⛷️","Nieve"],["deporte","🏃","Deporte"],["elegante","🍷","Cena o evento"],["trabajo","💼","Trabajo"]]};
+const ACTS = {id:"actividades", type:"multi", label:"¿Qué vas a hacer?", hint:"Puedes elegir varias.", def:[], opts:[["ciudad","🏙️","Ciudad"],["playa","🏖️","Playa"],["piscina","🏊","Piscina"],["montana","🥾","Montaña"],["nieve","⛷️","Nieve"],["deporte","🏃","Deporte"],["elegante","🍷","Cena elegante"]]};
+const ACTS_V = {...ACTS, label:a => a.motivo && a.motivo !== "ocio" ? "¿Algo más en tu tiempo libre?" : "¿Qué vas a hacer?", hint:a => a.motivo && a.motivo !== "ocio" ? "Opcional. Si no, pulsa Siguiente." : "Puedes elegir varias."};
+const MOTIVO = {id:"motivo", type:"choice", label:"¿Para qué es el viaje?", hint:"Si es por trabajo o un curso, te pregunto por la ropa formal y añado lo del trabajo.", def:"ocio",
+  opts:[["ocio","🏖️","Vacaciones u ocio"],["trabajo","💼","Trabajo","Reuniones, clientes, feria…"],["curso","🎓","Curso o formación","Clases, congreso, examen…"],["evento","🎉","Boda o evento","Celebración, cena de gala…"]]};
+const DIASTRAB = {id:"diasTrab", type:"number", label:a => a.motivo === "curso" ? "¿Cuántos días de curso?" : "¿Cuántos días trabajas allí?", hint:"Para calcular camisas y ropa de trabajo.", def:3, min:1, max:a => a.dias, quick:[1,2,3,4,5], show:a => a.motivo === "trabajo" || a.motivo === "curso"};
+const DRESS = {id:"dress", type:"choice", label:a => a.motivo === "evento" ? "¿Cómo hay que ir vestido?" : "¿Cómo tienes que vestir?", def:"smart", show:a => a.motivo && a.motivo !== "ocio",
+  opts:[["traje","👔","Formal","Traje (y corbata) o equivalente"],["smart","👕","Arreglado","Camisa o blusa, sin traje"],["informal","👟","Informal","Lo de siempre"]]};
+function motivoSet(a, v){
+  a.actividades = v === "ocio" ? ["ciudad"] : [];
+  a.dress = v === "trabajo" ? "smart" : v === "curso" ? "informal" : "traje";
+  if(!a._dt) a.diasTrab = v === "curso" ? Math.min(a.dias, 5) : a.dias;
+}
 const LAVA = {id:"lavadora", type:"toggle", label:"¿Podrás lavar ropa allí?", hint:"Si puedes, llevarás ropa para 5 días como máximo.", def:false, show:a => a.dias > 5};
+const lbl = (q, a) => typeof q.label === "function" ? q.label(a) : q.label;
+const hnt = (q, a) => typeof q.hint === "function" ? q.hint(a) : q.hint;
+const qmax = (q, a) => typeof q.max === "function" ? q.max(a) : q.max;
 
 const T = {
   viaje: {
-    icon:"✈️", name:"Viaje", desc:"Papeles, roaming, transporte y maleta",
-    asks:"destino, transporte, días, tiempo y actividades",
+    icon:"✈️", name:"Viaje", desc:"Ocio o trabajo: papeles, roaming y maleta",
+    asks:"destino, motivo (ocio, trabajo, curso…), transporte, días, ropa y tiempo",
     qs:[
       {id:"lugar", type:"place", label:"¿A dónde vas?", hint:"Escribe la ciudad o el país. Así sé qué documentos, moneda y enchufe necesitas, y miro el tiempo.", ph:"Ej.: Londres, Roma, Nueva York…", optional:true},
+      MOTIVO,
       {id:"fecha", type:"date", label:"¿Cuándo sales?", hint:"Opcional. Verás una cuenta atrás, te diré qué toca hacer cada día y podré mirar el tiempo.", optional:true},
       {id:"destino", type:"choice", label:"¿Dónde está el destino?", hint:"Cambia la documentación, el roaming y el seguro médico.", def:"ue", opts:[["nacional","🇪🇸","España","Con el DNI basta"],["ue","🇪🇺","Unión Europea","DNI, tarjeta sanitaria europea y roaming incluido"],["fuera","🌍","Fuera de la UE","Documentos, seguro y roaming según el país"]]},
       {id:"divisa", type:"toggle", label:"¿Allí se paga en otra moneda?", hint:"Para recordarte el efectivo y la tarjeta sin comisiones.", def:false, show:a => a.destino !== "nacional" && !(a.place && destOf(country(a.place.cc)) === a.destino)},
       {id:"transporte", type:"choice", label:"¿Cómo vas?", def:"avion", opts:[["avion","✈️","Avión"],["tren","🚆","Tren"],["coche","🚗","Coche"],["bus","🚌","Autobús"],["barco","⛴️","Barco"]]},
       {id:"equipaje", type:"choice", label:"¿Qué equipaje llevas?", def:"mano", opts:[["mano","🎒","Solo de mano","Ojo con los líquidos"],["facturado","🧳","Facturado","Maleta en bodega"]], show:a => a.transporte === "avion"},
-      DIAS, TIEMPO, LLUVIA, {...ACTS, def:["ciudad"]},
+      DIAS, DIASTRAB, DRESS, TIEMPO, LLUVIA, {...ACTS_V, def:["ciudad"]},
       {id:"con", type:"multi", label:"¿Viajas con alguien que necesite cosas aparte?", hint:"Si no, pulsa Siguiente.", def:[], opts:[["ninos","👶","Niños"],["mascota","🐶","Mascota"]]},
       {id:"alquiler", type:"toggle", label:"¿Vas a alquilar coche?", def:false, show:a => a.transporte !== "coche"},
       LAVA,
       {id:"casa", type:"toggle", label:"¿Añado el repaso de casa antes de salir?", hint:"Gas, agua, ventanas, puerta…", def:true}
     ],
-    onSet(a, id, v){ if(id === "destino"){ const k = a.place && country(a.place.cc); a.divisa = k && destOf(k) === v ? !!k.cur : v === "fuera"; } },
-    title(a){ return `${a.lugar && a.lugar.trim() ? a.lugar.trim() : "Viaje"} · ${a.dias} ${a.dias == 1 ? "día" : "días"}`; },
+    onSet(a, id, v){ if(id === "motivo") motivoSet(a, v); if(id === "destino"){ const k = a.place && country(a.place.cc); a.divisa = k && destOf(k) === v ? !!k.cur : v === "fuera"; } },
+    title(a){ const pre = {trabajo:"Trabajo en ", curso:"Curso en ", evento:"Evento en "}[a.motivo] || "";
+      const l = a.lugar && a.lugar.trim(); return `${l ? pre + l : pre ? pre.replace(/ en $/, "") : "Viaje"} · ${a.dias} ${a.dias == 1 ? "día" : "días"}`; },
     build(a){
       const b = B();
       const fuera = a.destino === "fuera", ue = a.destino === "ue", nac = a.destino === "nacional";
@@ -566,6 +614,32 @@ const T = {
       b.sec("🔌 Tecnología")
         .add("!Móvil").add("!Cargador del móvil").add("Batería externa").add("Auriculares")
         .add(P.plugs && !P.generic ? `!Adaptador de enchufe tipo ${P.plugTxt}` : "Adaptador de enchufe", fuera && P.adapter).add("Cargador de coche para el móvil", conduce);
+      const mot = a.motivo || "ocio", work = mot === "trabajo" || mot === "curso", curso = mot === "curso";
+      if(work){
+        b.sec("📅 Con antelación")
+          .add(curso ? "Confirmar horario, aula y dirección del curso" : "Confirmar agenda, horarios y direcciones de las reuniones")
+          .add("Revisar la política de viajes y gastos de la empresa")
+          .add("Pedir anticipo de dietas si lo necesitas")
+          .add("Pedir la póliza o el teléfono del seguro de viaje de la empresa", fuera)
+          .add("Carta de invitación de la empresa u organizador (para la entrada al país)", fuera && !P.dni)
+          .add(`Comprobar que tu ${P.entry ? "autorización o visado" : "permiso de entrada"} cubre viajes de ${curso ? "estudios o formación" : "negocios"}`, fuera && (!!P.entry || P.generic))
+          .add("Certificado A1 de la Seguridad Social (desplazamiento por trabajo)", mot === "trabajo" && (P.eea || P.cc === "CH") && !nac)
+          .add(curso ? "Descargar materiales del curso" : "Descargar presentaciones y documentos sin conexión")
+          .add("Poner respuesta automática en el correo");
+        b.sec("🌍 Al llegar", "do", "llegar")
+          .add("!Guardar todos los tickets y facturas (foto en el móvil)")
+          .add("Pedir la factura del hotel a nombre de la empresa")
+          .add("Apuntar los kilómetros si vas en tu coche", coche)
+          .add("Pedir el certificado de asistencia al terminar", curso);
+        b.sec("💼 Trabajo")
+          .add("!Portátil cargado").add("Cargador del portátil").add("Ratón")
+          .add("Adaptador USB-C / HDMI para proyectar", !curso)
+          .add("Tarjeta de empresa", !curso).add("Tarjetas de visita", !curso)
+          .add(curso ? "Confirmación de inscripción o acreditación" : "Acreditación o pase del evento, si hay")
+          .add(curso ? "Material del curso" : "Documentación de las reuniones")
+          .add("Cuaderno y bolígrafo")
+          .add("Regalo de cortesía para el cliente", !curso && ["JP","CN","KR"].includes(P.cc));
+      }
       if(avion) b.sec("✈️ Para el avión")
         .add("Botella vacía para rellenar después del control")
         .add("Chaqueta o sudadera (en el avión hace frío)")
@@ -580,16 +654,17 @@ const T = {
         .add("Silla de coche", conduce).add("Medicinas infantiles (antitérmico)");
       if(masc) b.sec("🐶 Mascota")
         .add("Transportín").add("Comida, cuencos y correa").add("Bolsas para excrementos");
-      packing(b, a, {tech:false, mano: avion && a.equipaje === "mano"});
+      packing(b, a, {tech:false, workDone:true, mano: avion && a.equipaje === "mano"});
       return b.done();
     }
   },
 
   maleta: {
     icon:"🧳", name:"Maleta", desc:"Ropa y neceser según días y tiempo", asks:"días, tiempo y actividades",
-    qs:[ DIAS, TIEMPO, LLUVIA, ACTS,
+    qs:[ MOTIVO, DIAS, DIASTRAB, DRESS, TIEMPO, LLUVIA, ACTS_V,
       {id:"mano", type:"toggle", label:"¿Vas en avión solo con equipaje de mano?", hint:"Te recordaré lo de los líquidos.", def:false}, LAVA ],
-    title(a){ const e = {verano:"calor", invierno:"frío", entretiempo:"templado"}[a.estacion]; return `Maleta · ${a.dias} ${a.dias == 1 ? "día" : "días"} · ${e}`; },
+    onSet(a, id, v){ if(id === "motivo") motivoSet(a, v); },
+    title(a){ const e = {verano:"calor", invierno:"frío", entretiempo:"templado"}[a.estacion]; const m = {trabajo:" de trabajo", curso:" del curso", evento:" del evento"}[a.motivo] || ""; return `Maleta${m} · ${a.dias} ${a.dias == 1 ? "día" : "días"} · ${e}`; },
     build(a){ const b = B(); packing(b, a, {mano:a.mano}); return b.done(); }
   },
 
@@ -657,10 +732,11 @@ const T = {
   trabajo: {
     icon:"💼", name:"Trabajo", desc:"Oficina, teletrabajo o visita", asks:"qué toca hoy y extras",
     qs:[
-      {id:"modo", type:"choice", label:"¿Qué toca?", def:"oficina", opts:[["oficina","🏢","Oficina"],["casa","🏠","Teletrabajo"],["cliente","🤝","Visita a cliente"],["viaje","🧳","Viaje de trabajo"]]},
+      {id:"modo", type:"choice", label:"¿Qué toca?", hint:"Para un viaje de trabajo o un curso fuera, te llevo al asistente de viajes: pregunta destino, días y ropa.", def:"oficina", opts:[["oficina","🏢","Oficina"],["casa","🏠","Teletrabajo"],["cliente","🤝","Visita a cliente"],["cursoaqui","📚","Curso aquí"],["viaje","✈️","Viaje de trabajo"],["cursofuera","🎓","Curso fuera"]]},
       {id:"extras", type:"multi", label:"¿Algo más?", hint:"Puedes elegir varias.", def:["portatil"], opts:[["portatil","💻","Llevo portátil"],["comida","🥗","Como fuera"],["reunion","📊","Reunión importante"],["gym","🏋️","Entreno después"]]}
     ],
-    title(a){ return "Trabajo · " + {oficina:"oficina", casa:"teletrabajo", cliente:"visita a cliente", viaje:"viaje de trabajo"}[a.modo]; },
+    redirect(a){ if(a.modo === "viaje") return {k:"viaje", preset:{motivo:"trabajo"}}; if(a.modo === "cursofuera") return {k:"viaje", preset:{motivo:"curso"}}; },
+    title(a){ return "Trabajo · " + {oficina:"oficina", casa:"teletrabajo", cliente:"visita a cliente", cursoaqui:"curso"}[a.modo]; },
     build(a){
       const b = B(), e = a.extras || [], m = a.modo;
       if(m === "casa") b.sec("🏠 Antes de empezar", "do")
@@ -668,8 +744,8 @@ const T = {
       if(m === "cliente" || has(e,"reunion")) b.sec("📊 Preparar la reunión", "do")
         .add("!Descargar la presentación (por si no hay wifi)").add("Repasar la agenda y los objetivos")
         .add("Mirar la dirección y cómo llegar", m === "cliente");
-      if(m === "viaje") b.sec("🧳 Antes del viaje", "do")
-        .add("Revisar la política de gastos").add("Descargar billetes y reservas").add("Guardar los tickets de gastos (durante el viaje)");
+      if(m === "cursoaqui") b.sec("📚 Antes del curso", "do")
+        .add("Confirmar horario y aula").add("Descargar los materiales").add("Poner respuesta automática en el correo");
       if(m !== "casa") b.sec("👜 Lo de siempre")
         .add("!Llaves").add("!Cartera").add("Móvil y cargador").add("!Tarjeta de acceso a la oficina", m === "oficina")
         .add("Auriculares").add("Gafas").add("Abono de transporte").add("Paraguas si hay previsión de lluvia");
@@ -677,8 +753,8 @@ const T = {
         .add("!Portátil cargado").add("Cargador del portátil").add("Ratón").add("Adaptador USB-C / HDMI", m !== "casa");
       if(m === "cliente" || has(e,"reunion")) b.sec("📊 Para la reunión")
         .add("Cuaderno y boli").add("Ropa adecuada").add("Tarjetas de visita", m === "cliente");
-      if(m === "viaje") b.sec("🧳 Viaje de trabajo")
-        .add("!DNI o pasaporte").add("Tarjeta de empresa").add("Ropa para los días de viaje").add("Neceser");
+      if(m === "cursoaqui") b.sec("📚 Para el curso")
+        .add("Acreditación o confirmación de inscripción").add("Cuaderno y bolígrafo").add("Material del curso").add("Botella de agua");
       if(has(e,"comida")) b.sec("🥗 Comida")
         .add("Tupper").add("Cubiertos").add("Botella de agua").add("Snack para media mañana");
       if(has(e,"gym")) b.sec("🏋️ Para entrenar después")
@@ -746,7 +822,16 @@ let view = {name:"home"};
 let ui = {edit:false, hide:false, imp:false, col:{}, sug:null};
 function go(v, replace){ view = v; ui.edit = false; ui.hide = false; ui.imp = false; ui.sug = null;
   replace ? history.replaceState(v, "") : history.pushState(v, ""); render(); scrollTo(0, 0); }
-addEventListener("popstate", e => { closeSheet(); view = e.state || {name:"home"}; ui.edit = false; ui.sug = null; render(); });
+let leaving = false;
+addEventListener("popstate", e => {
+  // El botón «atrás» del móvil cierra primero lo que esté abierto
+  if(leaving){ leaving = false; closeSheet(); view = e.state || {name:"home"}; ui.edit = false; ui.sug = null; render(); return; }
+  const tut = $("#tut");
+  if($("#ov") || tut){ closeSheet(); if(tut){ S.seen.tutorial = true; save(); tut.remove(); } history.pushState(view, ""); return; }
+  if(ui.edit && view.name === "list"){ ACT.edit(); history.pushState(view, ""); return; }
+  if(view.name === "wizard" && view.step > 0){ ACT.wback(); history.pushState(view, ""); return; }
+  view = e.state || {name:"home"}; ui.edit = false; ui.sug = null; render();
+});
 
 /* ===================== Render ===================== */
 function render(){
@@ -825,6 +910,7 @@ function helpHTML(){
     ["¿Cómo reutilizo una lista?", "Pulsa ⋯ → «Desmarcar todo». Ideal para la mochila del gimnasio. También puedes guardarla como plantilla tuya."],
     ["¿Cómo aprende la app?", "Si en una lista hecha con plantilla añades algo, lo incluiré en las siguientes listas de ese tipo. Si quitas algo y pulsas «No sugerir más», no volverá a salir. Lo puedes revisar en Plantillas → Lo que he aprendido."],
     ["¿Cómo sabe la app qué necesito para cada país?", "Cuando escribes el destino, busco la ciudad y miro el país: si es de la UE, si vale el DNI, la moneda, el tipo de enchufe, si conducen por la izquierda y si pide autorización de entrada (ESTA, ETA…). Con la fecha, consulto el tiempo. Revisa siempre los requisitos oficiales en la web de Exteriores antes de viajar."],
+    ["¿Sirve para viajes de trabajo o cursos?", "Sí. En el asistente de Viaje elige «Trabajo» o «Curso o formación». Te pregunto cuántos días trabajas y cómo tienes que vestir, calculo trajes, camisas y corbatas, y añado lo del trabajo: portátil, política de gastos, tickets, carta de invitación o certificado A1 si vas fuera. También puedes empezar desde la plantilla Trabajo → «Viaje de trabajo»."],
     ["¿Me puede avisar antes del viaje?", "Sí. En una lista con fecha, pulsa ⋯ → «Recordatorios en el calendario». Se añaden avisos a tu calendario: una semana antes, la tarde anterior y el día de salida, cada uno con sus tareas."],
     ["¿Puedo compartir una lista?", "Sí. Pulsa ⋯ → «Compartir como texto» para mandarla por WhatsApp, o «Enviar enlace» para que la otra persona la importe en su Repaso."],
     ["¿Dónde se guardan mis listas?", "Solo en este móvil, sin cuentas ni servidores. Haz una copia de seguridad de vez en cuando (abajo)."]
@@ -851,7 +937,7 @@ function fmt(q, v){
   if(q.type === "multi") return (v || []).length ? q.opts.filter(o => has(v, o[0])).map(o => o[1]).join(" ") : "Nada";
   if(q.type === "place") return (view.a.place ? view.a.place.name + (C[view.a.place.cc] && C[view.a.place.cc][0] !== view.a.place.name ? ", " + C[view.a.place.cc][0] : "") : (v || "—"));
   if(q.type === "date") return v ? new Date(v + "T00:00:00").toLocaleDateString("es-ES", {weekday:"short", day:"numeric", month:"short"}) : "Sin fecha";
-  if(q.type === "number") return v + (q.id === "dias" ? (v == 1 ? " día" : " días") : "");
+  if(q.type === "number") return v + (q.id === "dias" || q.id === "diasTrab" ? (v == 1 ? " día" : " días") : "");
   return v || "—";
 }
 function wizardHTML(){
@@ -859,7 +945,7 @@ function wizardHTML(){
   let h = `<div class="top"><button class="ib" data-act="wback" aria-label="Atrás">←</button><div class="tt"><div class="bar"><i style="width:${Math.round(st / n * 100)}%"></i></div><small style="margin-top:4px">${t.icon} ${t.name} · ${st < n ? `paso ${st + 1} de ${n}` : "revisar"}</small></div><button class="ib" data-act="wclose" aria-label="Cerrar">✕</button></div>`;
   if(st < n){
     const q = qs[st], v = a[q.id];
-    h += `<div class="wz"><h2>${q.label}</h2>${q.hint ? `<p class="muted">${q.hint}</p>` : ""}${qBody(q, a)}</div>`;
+    h += `<div class="wz"><h2>${lbl(q, a)}</h2>${hnt(q, a) ? `<p class="muted">${hnt(q, a)}</p>` : ""}${qBody(q, a)}</div>`;
     const auto = q.type === "choice" || q.type === "toggle";
     h += `<div class="bottom"><div>${q.optional && isEmpty(v) ? `<button class="btn" data-act="wnext">Saltar</button>` : `<button class="btn ${auto ? "sec" : ""}" data-act="wnext">Siguiente</button>`}</div></div>`;
   } else {
@@ -869,7 +955,7 @@ function wizardHTML(){
     h += `<div class="wz"><h2>¡Lista preparada!</h2><p class="muted">Ponle nombre, revisa tus respuestas y créala. Luego podrás añadir o quitar lo que quieras.</p>
       <input class="inp big-inp" style="margin-top:4px" data-in="wname" value="${esc(view.lname ?? t.title(a))}" aria-label="Nombre de la lista">
       <div class="card sumc"><div class="stats"><div><b>${items.length}</b><small>en total</small></div>${doN ? `<div><b>${doN}</b><small>por hacer</small></div><div><b>${items.length - doN}</b><small>para llevar</small></div>` : `<div><b>${secs.length}</b><small>secciones</small></div>`}<div><b style="color:var(--warn)">${imp}</b><small>imprescindibles</small></div></div></div>
-      <div class="card" style="padding:4px 14px">${qs.map((q, i) => `<button class="ans" data-act="wjump" data-v="${i}"><span>${q.label}</span><b>${esc(fmt(q, a[q.id]))}</b></button>`).join("")}</div>
+      <div class="card" style="padding:4px 14px">${qs.map((q, i) => `<button class="ans" data-act="wjump" data-v="${i}"><span>${lbl(q, a)}</span><b>${esc(fmt(q, a[q.id]))}</b></button>`).join("")}</div>
       </div><div class="bottom"><div><button class="btn" data-act="create">Crear lista ✓</button></div></div>`;
   }
   return h;
@@ -885,11 +971,11 @@ function qBody(q, a){
   if(q.type === "multi") return `<div class="opts">${q.opts.map(o => op(has(v, o[0]), o[0], o[1], o[2])).join("")}</div>`;
   if(q.type === "toggle") return pre + `<div class="opts">${op(v === true, "1", "👍", "Sí")}${op(v === false, "0", "👎", "No")}</div>`;
   if(q.type === "number") return `<div class="step"><button data-act="num" data-q="${q.id}" data-v="-1" aria-label="Menos">−</button><output>${v}</output><button data-act="num" data-q="${q.id}" data-v="1" aria-label="Más">+</button></div>
-    <div class="qchips">${(q.quick || []).map(n => `<button class="chip ${v === n ? "on" : ""}" data-act="numset" data-q="${q.id}" data-v="${n}">${n}</button>`).join("")}</div>`;
+    <div class="qchips">${(q.quick || []).filter(n => n <= qmax(q, a)).map(n => `<button class="chip ${v === n ? "on" : ""}" data-act="numset" data-q="${q.id}" data-v="${n}">${n}</button>`).join("")}</div>`;
   if(q.type === "place") return `<input class="inp big-inp" type="search" data-in="place" value="${esc(v || "")}" placeholder="${esc(q.ph || "")}" enterkeyhint="search" autocomplete="off">
     <div class="pres" id="pres">${a.place ? `<div class="op on"><span class="em">📍</span><span><b>${esc(a.place.name)}</b><small>${esc(a.place.sub)}</small></span></div>` : ""}</div>`;
   if(q.type === "text") return `<input class="inp big-inp" type="text" data-in="ans" data-q="${q.id}" value="${esc(v || "")}" placeholder="${esc(q.ph || "")}" enterkeyhint="next">`;
-  if(q.type === "date") return `<input class="inp big-inp" type="date" data-in="ans" data-q="${q.id}" value="${esc(v || "")}" min="${new Date().toISOString().slice(0, 10)}">`;
+  if(q.type === "date") return `<input class="inp big-inp" type="date" data-in="ans" data-q="${q.id}" value="${esc(v || "")}" min="${localISO(new Date())}">`;
   return "";
 }
 
@@ -1088,6 +1174,14 @@ document.addEventListener("touchend", () => {
   else { s.it.style.transform = ""; setTimeout(() => s.bg && s.bg.remove(), 200); }
 });
 
+function setNum(id, v){
+  const a = view.a, q = T[view.k].qs.find(q => q.id === id);
+  a[id] = Math.min(qmax(q, a), Math.max(q.min, v));
+  if(id === "diasTrab") a._dt = true;
+  if(id === "dias" && a.diasTrab !== undefined) a.diasTrab = a._dt ? Math.min(a.diasTrab, a.dias) : (a.motivo === "curso" ? Math.min(a.dias, 5) : a.dias);
+  render();
+}
+
 /* ===================== Búsqueda de destino ===================== */
 let PR = [], pT = null, pSeq = 0;
 function curQ(){ if(view.name !== "wizard") return null; const qs = vis(T[view.k], view.a); return qs[Math.min(view.step, qs.length)] || null; }
@@ -1152,20 +1246,30 @@ const ACT = {
   ans(el){ const t = T[view.k], q = t.qs.find(q => q.id === el.dataset.q), a = view.a, v = el.dataset.v;
     if(q.type === "multi"){ a[q.id] = has(a[q.id], v) ? a[q.id].filter(z => z !== v) : [...(a[q.id] || []), v]; render(); return; }
     if(q.type === "toggle") a[q.id] = v === "1"; else { a[q.id] = v; t.onSet && t.onSet(a, q.id, v); }
+    const red = t.redirect && t.redirect(a);
+    if(red){ const k = red.k, na = {...defaults(k), ...red.preset}; if(T[k].onSet) Object.entries(red.preset).forEach(([i, val]) => T[k].onSet(na, i, val));
+      render(); setTimeout(() => { view = {name:"wizard", k, a:na, step:0}; history.replaceState(view, ""); render(); scrollTo(0, 0);
+        toast(red.preset.motivo === "curso" ? "Te llevo al asistente de viajes, ya en modo curso" : "Te llevo al asistente de viajes, ya en modo trabajo"); }, 230); return; }
     render(); const st = view.step; setTimeout(() => { if(view.name === "wizard" && view.step === st){ view.step = view.back ?? st + 1; view.back = null; render(); scrollTo(0, 0); } }, 230); },
-  num(el){ const q = T[view.k].qs.find(q => q.id === el.dataset.q); view.a[q.id] = Math.min(q.max, Math.max(q.min, (view.a[q.id] | 0) + (+el.dataset.v))); render(); },
-  numset(el){ view.a[el.dataset.q] = +el.dataset.v; render(); },
+  num(el){ setNum(el.dataset.q, (view.a[el.dataset.q] | 0) + (+el.dataset.v)); },
+  numset(el){ setNum(el.dataset.q, +el.dataset.v); },
   pick(el){ pickPlace(PR[+el.dataset.v]); ACT.wnext(); },
-  wnext(){ fetchWx(view.a); view.step = view.back ?? view.step + 1; view.back = null; render(); scrollTo(0, 0); },
+  wnext(){
+    const q = curQ(), a = view.a;
+    if(q && q.type === "place" && !a.place && a.lugar && a.lugar.trim()){
+      const m = PR.find(p => norm(p.name) === norm(a.lugar)) || (PR.length === 1 ? PR[0] : null);
+      if(m) pickPlace(m);
+    }
+    fetchWx(view.a); view.step = view.back ?? view.step + 1; view.back = null; render(); scrollTo(0, 0); },
   wback(){ if(view.step > 0){ view.step = Math.min(view.step, vis(T[view.k], view.a).length) - 1; view.back = null; render(); } else ACT.wclose(); },
-  wclose(){ history.length > 1 && history.state && history.state.name === "wizard" ? history.back() : go({name:"home"}, true); },
+  wclose(){ if(history.length > 1 && history.state && history.state.name === "wizard"){ leaving = true; history.back(); } else go({name:"home"}, true); },
   wjump(el){ view.back = vis(T[view.k], view.a).length; view.step = +el.dataset.v; render(); scrollTo(0, 0); },
   create(){ const t = T[view.k]; const secs = generate(view.k, view.a);
     const l = makeList((view.lname ?? t.title(view.a)).trim() || t.title(view.a), t.icon, secs, {tpl:view.k, date:view.a.fecha || null});
     S.lists.push(l); save();
     view = {name:"list", id:l.id}; ui = {edit:false, hide:false, imp:false, col:{}, sug:null}; history.replaceState(view, ""); render(); scrollTo(0, 0); },
   /* lista */
-  back(){ history.length > 1 && history.state && history.state.name === "list" ? history.back() : go({name:"home"}, true); },
+  back(){ if(ui.edit) ACT.edit(); if(history.length > 1 && history.state && history.state.name === "list"){ leaving = true; history.back(); } else go({name:"home"}, true); },
   open(el){ go({name:"list", id:el.dataset.id}); },
   lf(el){ view.f = el.dataset.v; history.replaceState(view, ""); render(); },
   tipok(){ S.seen.listTip = true; save(); render(); },
@@ -1190,7 +1294,10 @@ const ACT = {
   smove(el){ const l = L_(), k = l.sections.findIndex(s => s.id === el.dataset.s), j = k + (+el.dataset.v);
     if(j < 0 || j >= l.sections.length) return; [l.sections[k], l.sections[j]] = [l.sections[j], l.sections[k]]; save(); render(); },
   kind(el){ const s = secOf(el.dataset.s); s.kind = s.kind === "do" ? "pack" : "do"; save(); render(); toast(s.kind === "do" ? "Ahora es una sección «Por hacer»" : "Ahora es una sección «Para llevar»"); },
-  edit(){ ui.edit = !ui.edit; ui.sug = null; render(); if(!ui.edit) toast("Cambios guardados"); },
+  edit(){ ui.edit = !ui.edit; ui.sug = null;
+    if(!ui.edit){ const l = L_(); l.name = (l.name || "").trim() || "Mi lista";
+      l.sections.forEach(s => { s.title = (s.title || "").trim() || "Sin título"; s.items = s.items.filter(i => (i.t = (i.t || "").trim())); }); save(); }
+    render(); if(!ui.edit) toast("Cambios guardados"); },
   hide(){ ui.hide = !ui.hide; closeSheet(); render(); },
   fimp(){ ui.imp = !ui.imp; render(); },
   sug(el){ ui.sug = ui.sug === el.dataset.s ? null : el.dataset.s; render(); },

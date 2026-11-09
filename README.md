@@ -19,6 +19,6 @@ Funciona en Android y en iPhone, se instala en la pantalla de inicio y va sin co
 ## Cambiarla más adelante
 
 Si editas `index.html` y lo vuelves a subir, la app se actualiza sola la próxima vez que la abras con conexión.
-Si cambias otros archivos (iconos, etc.), sube también un número la versión de `sw.js` (por ejemplo, de `repaso-v3` a `repaso-v4`) en `sw.js`.
+Si cambias otros archivos (iconos, etc.), sube también un número la versión de `sw.js` (por ejemplo, de `repaso-v4` a `repaso-v5`) en `sw.js`.
 
 Tus listas se guardan solo en el móvil. Desde ⚙️ puedes descargar una copia de seguridad y restaurarla en otro móvil.
